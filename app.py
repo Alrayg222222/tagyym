@@ -5,21 +5,21 @@ from datetime import datetime
 from dotenv import load_dotenv
 import pprint
 
-# تحميل متغيرات البيئة من ملف .env
+# تحميل متغيرات البيئة
 load_dotenv()
 
 app = Flask(__name__)
 
-# جلب المتغيرات من البيئة
+# إعدادات من البيئة
 TELEGRAM_TOKEN = os.environ.get("TELEGRAM_TOKEN")
 CHAT_ID1 = os.environ.get("CHAT_ID1")
 CHAT_ID2 = os.environ.get("CHAT_ID2")
-PORT = int(os.environ.get("PORT", 5000))  # المنفذ الافتراضي 5000
+PORT = int(os.environ.get("PORT", 5000))
 
-# قائمة المعرفات
+# المعرفات
 CHAT_IDS = [CHAT_ID1, CHAT_ID2]
 
-# دالة إرسال رسالة لتليجرام
+# دالة إرسال رسالة Telegram
 def send_telegram_message(message):
     for chat_id in CHAT_IDS:
         if chat_id:
@@ -33,30 +33,33 @@ def send_telegram_message(message):
             if not response.ok:
                 print(f"❌ فشل الإرسال إلى {chat_id}: {response.text}")
 
-# استقبال بيانات التقييم من Webhook
+# نقطة Webhook
 @app.route('/webhook', methods=['POST'])
 def receive_review():
     print("======================================")
     print("📥 تم استلام طلب Webhook")
-
-    # طباعة البيانات الخام JSON والـ RAW
-    print("🔴 Raw request.data:")
-    print(request.data)
-
-    print("🔵 Parsed request.json:")
+    
     data = request.json
     pprint.pprint(data)
 
-    # استخراج البيانات من المستوى الأول فقط (مسطحة)
-    customer = data.get("name") or data.get("customer_name") or "عميل غير معروف"
-    rating = data.get("rating") or "بدون تقييم"
-    comment = data.get("comment") or "لا يوجد تعليق"
-    product = data.get("product") or data.get("product_name") or "منتج غير معروف"
+    # استخراج البيانات من داخل الكائن data
+    review_data = data.get("data", {})
+    
+    customer = review_data.get("customer", {}).get("name", "عميل غير معروف")
+    rating = review_data.get("rating", "بدون تقييم")
+    comment = review_data.get("content", "لا يوجد تعليق")
 
-    # التاريخ الحالي
+    # المنتج (إذا فيه عناصر في order.items ناخذ اسم أول منتج)
+    product = "منتج غير معروف"
+    order = review_data.get("order", {})
+    items = order.get("items", [])
+    if items and isinstance(items, list):
+        product = items[0].get("name", product)
+
+    # التاريخ
     now = datetime.now().strftime("%Y-%m-%d %H:%M")
 
-    # تنسيق الرسالة
+    # الرسالة
     message = f"""📬 *تقييم جديد من أحد العملاء*
 
 👤 الاسم: **{customer}**
@@ -66,7 +69,6 @@ def receive_review():
 🕒 التاريخ: {now}
 """
 
-    # إرسال الرسالة
     send_telegram_message(message)
     return jsonify({"status": "success"}), 200
 
