@@ -3,7 +3,6 @@ import requests
 import os
 from datetime import datetime
 from dotenv import load_dotenv
-import pprint
 
 # تحميل متغيرات البيئة
 load_dotenv()
@@ -16,7 +15,7 @@ CHAT_ID1 = os.environ.get("CHAT_ID1")
 CHAT_ID2 = os.environ.get("CHAT_ID2")
 PORT = int(os.environ.get("PORT", 5000))
 
-# المعرفات
+# قائمة المعرفات
 CHAT_IDS = [CHAT_ID1, CHAT_ID2]
 
 # دالة إرسال رسالة Telegram
@@ -29,37 +28,26 @@ def send_telegram_message(message):
                 "text": message,
                 "parse_mode": "Markdown"
             }
-            response = requests.post(url, data=data)
-            if not response.ok:
-                print(f"❌ فشل الإرسال إلى {chat_id}: {response.text}")
+            requests.post(url, data=data)
 
-# نقطة Webhook
+# نقطة استقبال Webhook
 @app.route('/webhook', methods=['POST'])
 def receive_review():
-    print("======================================")
-    print("📥 تم استلام طلب Webhook")
-    
     data = request.json
-    pprint.pprint(data)
-
-    # استخراج البيانات من داخل الكائن data
     review_data = data.get("data", {})
-    
+
     customer = review_data.get("customer", {}).get("name", "عميل غير معروف")
     rating = review_data.get("rating", "بدون تقييم")
     comment = review_data.get("content", "لا يوجد تعليق")
 
-    # المنتج (إذا فيه عناصر في order.items ناخذ اسم أول منتج)
     product = "منتج غير معروف"
     order = review_data.get("order", {})
     items = order.get("items", [])
     if items and isinstance(items, list):
         product = items[0].get("name", product)
 
-    # التاريخ
     now = datetime.now().strftime("%Y-%m-%d %H:%M")
 
-    # الرسالة
     message = f"""📬 *تقييم جديد من أحد العملاء*
 
 👤 الاسم: **{customer}**
