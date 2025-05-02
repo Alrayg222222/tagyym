@@ -1,9 +1,9 @@
-
 from flask import Flask, request, jsonify
 import requests
 import os
 from datetime import datetime
 from dotenv import load_dotenv
+import pprint
 
 # تحميل متغيرات البيئة من ملف .env
 load_dotenv()
@@ -16,7 +16,7 @@ CHAT_ID1 = os.environ.get("CHAT_ID1")
 CHAT_ID2 = os.environ.get("CHAT_ID2")
 PORT = int(os.environ.get("PORT", 5000))  # المنفذ الافتراضي 5000
 
-# قائمة المعرفات (يمكنك الإضافة إذا عندك أكثر من شخص)
+# قائمة المعرفات (تقدر تضيف أكثر من واحد)
 CHAT_IDS = [CHAT_ID1, CHAT_ID2]
 
 # دالة إرسال رسالة لتليجرام
@@ -29,32 +29,35 @@ def send_telegram_message(message):
                 "text": message,
                 "parse_mode": "Markdown"
             }
-            requests.post(url, data=data)
+            response = requests.post(url, data=data)
+            if not response.ok:
+                print(f"❌ فشل الإرسال إلى {chat_id}: {response.text}")
 
 # استقبال بيانات التقييم من Webhook
 @app.route('/webhook', methods=['POST'])
 def receive_review():
     data = request.json
 
-    # استخراج البيانات المطلوبة
-    customer = data.get("customer", {}).get("name", "عميل غير معروف")
-    rating = data.get("review", {}).get("rating", "بدون تقييم")
-    comment = data.get("review", {}).get("comment", "لا يوجد تعليق")
-    product = data.get("product", {}).get("name", "منتج غير معروف")
+    # طباعة البيانات لاستكشاف هيكلها
+    print("📦 البيانات المستلمة من Webhook:")
+    pprint.pprint(data)
+
+    # محاولة استخراج البيانات سواء كانت متداخلة أو لا
+    customer = data.get("customer", {}).get("name") or data.get("name") or "عميل غير معروف"
+    rating = data.get("review", {}).get("rating") or data.get("rating") or "بدون تقييم"
+    comment = data.get("review", {}).get("comment") or data.get("comment") or "لا يوجد تعليق"
+    product = data.get("product", {}).get("name") or data.get("product_name") or "منتج غير معروف"
 
     # التاريخ الحالي
     now = datetime.now().strftime("%Y-%m-%d %H:%M")
 
-    # تنسيق الرسالة النهائية
-    message = f"""تقييم جديد من أحد العملاء
+    # تنسيق الرسالة
+    message = f"""📬 *تقييم جديد من أحد العملاء*
 
-
-\n\n\n
 👤 الاسم: **{customer}**
 📝 التعليق: {comment}
 ⭐ عدد النجوم: {rating}
 📦 المنتج: {product}
-
 🕒 التاريخ: {now}
 """
 
