@@ -16,7 +16,7 @@ CHAT_ID1 = os.environ.get("CHAT_ID1")
 CHAT_ID2 = os.environ.get("CHAT_ID2")
 PORT = int(os.environ.get("PORT", 5000))  # المنفذ الافتراضي 5000
 
-# قائمة المعرفات (تقدر تضيف أكثر من واحد)
+# قائمة المعرفات
 CHAT_IDS = [CHAT_ID1, CHAT_ID2]
 
 # دالة إرسال رسالة لتليجرام
@@ -38,15 +38,15 @@ def send_telegram_message(message):
 def receive_review():
     data = request.json
 
-    # طباعة البيانات لاستكشاف هيكلها
+    # طباعة البيانات الواردة لمراجعتها
     print("📦 البيانات المستلمة من Webhook:")
     pprint.pprint(data)
 
-    # محاولة استخراج البيانات سواء كانت متداخلة أو لا
-    customer = data.get("customer", {}).get("name") or data.get("name") or "عميل غير معروف"
-    rating = data.get("review", {}).get("rating") or data.get("rating") or "بدون تقييم"
-    comment = data.get("review", {}).get("comment") or data.get("comment") or "لا يوجد تعليق"
-    product = data.get("product", {}).get("name") or data.get("product_name") or "منتج غير معروف"
+    # استخراج البيانات من المستوى الأول فقط (مسطحة)
+    customer = data.get("name") or data.get("customer_name") or "عميل غير معروف"
+    rating = data.get("rating") or "بدون تقييم"
+    comment = data.get("comment") or "لا يوجد تعليق"
+    product = data.get("product") or data.get("product_name") or "منتج غير معروف"
 
     # التاريخ الحالي
     now = datetime.now().strftime("%Y-%m-%d %H:%M")
