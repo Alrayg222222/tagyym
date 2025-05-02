@@ -36,10 +36,15 @@ def send_telegram_message(message):
 # استقبال بيانات التقييم من Webhook
 @app.route('/webhook', methods=['POST'])
 def receive_review():
-    data = request.json
+    print("======================================")
+    print("📥 تم استلام طلب Webhook")
 
-    # طباعة البيانات الواردة لمراجعتها
-    print("📦 البيانات المستلمة من Webhook:")
+    # طباعة البيانات الخام JSON والـ RAW
+    print("🔴 Raw request.data:")
+    print(request.data)
+
+    print("🔵 Parsed request.json:")
+    data = request.json
     pprint.pprint(data)
 
     # استخراج البيانات من المستوى الأول فقط (مسطحة)
